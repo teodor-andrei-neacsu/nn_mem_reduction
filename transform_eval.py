@@ -24,8 +24,9 @@ nrs_range_dict = {
     "IEEE754": (list(range(8, 1, -1)), list(range(23, 1, -1))),
     "Morris": (list(range(4, 1, -1)), list(range(32, 3, -1))),
     "MorrisHEB": (list(range(4, 1, -1)), list(range(32, 3, -1))),
-    "MorrisBiasHEB": (list(range(4, 1, -1)), None),
-    "Posit": (list(range(4, 0, -1)), list(range(32, 3, -1))),
+    "MorrisBiasHEB": (list(range(4, 1, -1)), list(range(32, 3, -1))),
+    "MorrisUnaryHEB": (None, list(range(32, 3, -1))),
+    "Posit": (list(range(4, -1, -1)), list(range(32, 3, -1))), # extra run with 0 exp
 }
 
 
@@ -46,35 +47,63 @@ def best_uniform_precision(og_model, dataset_name, nrs_name, wandb_flag, run_nam
 
     results = []
 
-    for a1 in tqdm(fst_pos_args, desc='First argument|exp|g|size'):
+    if nrs_name != "MorrisUnaryHEB":
 
-        if wandb_flag:
-            run = wandb.init(project='Uniform_NRS', name=run_name + "exp|g=" + str(a1), reinit=True)
-
-        for a2 in tqdm(snd_pos_args, desc='Second argument|frac|size'):
-
+        for a1 in tqdm(fst_pos_args, desc='First argument|exp|g|size'):
             
-            print("moe")
+            if wandb_flag and nrs_name not in ["Morris", "MorrisHEB", "MorrisBiasHEB"]:
+                run = wandb.init(project='Uniform_NRS', name=run_name + "exp|g=" + str(a1), reinit=True)
 
-            # transform the model from float32 to the given NRS with the given arguments (precision)
-            model = copy.deepcopy(og_model)
-            model = trf_uniform_precision(model, nrs_name, a1, a2)
-            
-            acc = eval_model(model, test_dl, device)
-            
+            for a2 in tqdm(snd_pos_args, desc='Second argument|frac|size'):
+
+                if nrs_name in ["Morris", "MorrisHEB", "MorrisBiasHEB"] and a1 < a2 - 3:
+                    if wandb_flag:
+                        run = wandb.init(project='Uniform_NRS', name=run_name + "exp|g=" + str(a1), reinit=True)
+                else:
+                    continue
+
+                # transform the model from float32 to the given NRS with the given arguments (precision)
+                model = copy.deepcopy(og_model)
+                model = trf_uniform_precision(model, nrs_name, a1, a2)
+                
+                acc = eval_model(model, test_dl, device)
+                
+                if wandb_flag:
+                    wandb.log({'acc': acc, 'arg_1': a1, 'arg_2': a2})
+                    # save results
+                    results.append((a1, a2, acc))
+                else:
+                    print(f'Accuracy: nrs: {nrs_name}, {acc}, arg_1: {a1}, arg_2: {a2}')
+                
             if wandb_flag:
-                wandb.log({'acc': acc, 'arg_1': a1, 'arg_2': a2})
+                run.finish()
+    
+    else:
+        if wandb_flag:
+            run = wandb.init(project='Uniform_NRS', name=run_name, reinit=True)
+
+        for a1 in tqdm(snd_pos_args, desc='Argument|frac|size'):
+            model = copy.deepcopy(og_model)
+            model = trf_uniform_precision(model, nrs_name, a1, None)
+            acc = eval_model(model, test_dl, device)
+            if wandb_flag:
+                wandb.log({'acc': acc, 'arg_1': a1})
                 # save results
-                results.append((a1, a2, acc))
+                results.append((a1, acc))
             else:
-                print(f'Accuracy: nrs: {nrs_name}, {acc}, arg_1: {a1}, arg_2: {a2}')
-            
+                print(f'Accuracy: nrs: {nrs_name}, {acc}, arg_1: {a1}')
+
         if wandb_flag:
             run.finish()
     
-    # save to dataframe
-    df = pd.DataFrame(results, columns=['arg_1', 'arg_2', 'acc'])
-    df.to_csv(f'./results/{run_name}results.csv', index=False)
+    if nrs_name != "MorrisUnaryHEB":
+        # save to dataframe
+        df = pd.DataFrame(results, columns=['arg_1', 'arg_2', 'acc'])
+        df.to_csv(f'./results/{run_name}results.csv', index=False)
+    else:
+        # save to dataframe
+        df = pd.DataFrame(results, columns=['arg_1', 'acc'])
+        df.to_csv(f'./results/{run_name}results.csv', index=False)
 
 def main():
 

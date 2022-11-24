@@ -81,10 +81,17 @@ def convert_layer_weigths(name, param, nrs_name, nrs_a1, nrs_a2):
     # save the layer as npy
     np.save(f'./weight_trf/{name}.npy', param.data.numpy().astype(">f"))
 
-    # transform the layer numerical representation system
-    subprocess.check_call(['java', '-Xmx1024m', '-jar', 'convert_weights.jar', f'./weight_trf/{name}.npy', f'./weight_prc/{name}.npy', nrs_name, str(nrs_a1), str(nrs_a2)],
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.STDOUT)
+    if nrs_name != "MorrisUnaryHEB":
+        # transform the layer numerical representation system
+        subprocess.check_call(['java', '-Xmx1024m', '-jar', 'convert_weights.jar', f'./weight_trf/{name}.npy', f'./weight_prc/{name}.npy', nrs_name, str(nrs_a1), str(nrs_a2)],
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.STDOUT)
+    else:
+        # transform the layer numerical representation system
+        subprocess.check_call(['java', '-Xmx1024m', '-jar', 'convert_weights.jar', f'./weight_trf/{name}.npy', f'./weight_prc/{name}.npy', nrs_name, str(nrs_a1)],
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.STDOUT)
+
 
     
 def trf_uniform_precision(model, nrs_name, nrs_a1, nrs_a2) -> torch.nn.Module:
