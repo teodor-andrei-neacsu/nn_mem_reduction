@@ -50,17 +50,14 @@ def best_uniform_precision(og_model, dataset_name, nrs_name, wandb_flag, run_nam
     if nrs_name != "MorrisUnaryHEB":
 
         for a1 in tqdm(fst_pos_args, desc='First argument|exp|g|size'):
-            
-            if wandb_flag and nrs_name not in ["Morris", "MorrisHEB", "MorrisBiasHEB"]:
+
+            if wandb_flag:
                 run = wandb.init(project='Uniform_NRS', name=run_name + "exp|g=" + str(a1), reinit=True)
 
             for a2 in tqdm(snd_pos_args, desc='Second argument|frac|size'):
 
-                if nrs_name in ["Morris", "MorrisHEB", "MorrisBiasHEB"] and a1 < a2 - 3:
-                    if wandb_flag:
-                        run = wandb.init(project='Uniform_NRS', name=run_name + "exp|g=" + str(a1), reinit=True)
-                else:
-                    continue
+                if nrs_name in ["Morris", "MorrisHEB", "MorrisBiasHEB"] and a1 >= a2 - 3:
+                    break
 
                 # transform the model from float32 to the given NRS with the given arguments (precision)
                 model = copy.deepcopy(og_model)

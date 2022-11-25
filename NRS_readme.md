@@ -22,3 +22,12 @@ Single Precision Network:
 IEEE:
 exp 8 - 2 (cand acc scade sub threshold) - stop
 frac 23 - 1 (cand acc scade sub threshold) - stop
+
++++++++++++++++++++++++++++++
+1. folder npy per layer f32
+2.0. ploturi ox precizie oy acc => ratio + thtrehold acc dgr
+2. layer precision optimization de la inceput la final (dupa alte figuri)
+
+
+
+
